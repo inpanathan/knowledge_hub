@@ -1,0 +1,24 @@
+# Personal Project Overrides (CLAUDE.local.md)
+#
+# Copy this file to CLAUDE.local.md and customize for your local setup.
+# CLAUDE.local.md is gitignored and won't be shared with the team.
+#
+# Rename: cp CLAUDE.local.md.example CLAUDE.local.md
+
+## My preferences
+
+# - I prefer verbose test output: use `uv run pytest -v` instead of `-q`
+# - Always show full tracebacks: use `--tb=long`
+# - My local API runs on port 9000, not 8000
+
+## My environment
+
+# - Local database URL: postgresql://localhost:5432/mydb
+# - My sandbox API base URL: https://dev.example.com
+# - I use tmux, so notify-send doesn't work — disable notification hooks
+
+## My workflow
+
+# - I like to see git diffs before committing
+# - Don't auto-format on save — I do it manually
+# - When reviewing PRs, also check for accessibility issues

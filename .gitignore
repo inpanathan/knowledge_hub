@@ -56,3 +56,8 @@ frontend/dist/
 .coverage
 htmlcov/
 coverage.xml
+
+# Claude Code — personal/local files
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/scratchpad/
