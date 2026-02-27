@@ -22,7 +22,8 @@ This guide distills workflows from Boris's public threads, the Claude Code team'
 12. [Advanced Configuration](#12-advanced-configuration)
 13. [Daily Workflow Cheat Sheet](#13-daily-workflow-cheat-sheet)
 14. [What This Project Has vs. Boris's Setup](#14-what-this-project-has-vs-boriss-setup)
-15. [References](#15-references)
+15. [Autonomy Breakdown](#15-autonomy-breakdown)
+16. [References](#16-references)
 
 ---
 
@@ -768,7 +769,96 @@ claude --worktree feature-name
 
 ---
 
-## 15. References
+## 15. Autonomy Breakdown
+
+How much of this can Claude do on its own vs. what needs developer involvement?
+
+### Fully Autonomous (runs without any developer action)
+
+These are wired up and execute automatically after initial setup:
+
+| Practice | Mechanism |
+|----------|-----------|
+| Auto-format code after edits | PostToolUse hook |
+| Block edits to protected files | PreToolUse hook |
+| Post-compaction reminders | SessionStart hook |
+| Desktop notifications | Notification hook |
+| Pre-commit lint + typecheck | pre-commit hooks (ruff, mypy) |
+| Large file detection on commit | pre-commit hook |
+| Proactive code review after changes | code-reviewer `description` triggers it |
+| Agent memory accumulation | code-reviewer, qa-tester learn across sessions |
+
+**8 practices — zero developer effort after initial setup.**
+
+### Autonomous Once Invoked (developer gives one prompt, Claude handles the rest)
+
+| Practice | Invocation | What Claude does alone |
+|----------|------------|----------------------|
+| Quality checks | `/run-checks` | Lint, format, typecheck, tests, fix failures |
+| Fix a GitHub issue | `/fix-issue 42` | Read issue, find root cause, implement fix, write tests, create PR |
+| Scaffold endpoint | `/add-endpoint POST /items` | Route, models, tests, update cheatsheet |
+| Code review | `/review-code src/` | Full quality analysis, findings table |
+| PR review | `/review-pr` | Diff analysis, findings, suggestions |
+| Feature spec | `/spec feature-name` | Interview-driven spec document |
+| Post-impl cleanup | "Use code-simplifier" | Remove dead code, simplify, verify tests pass |
+| E2E verification | "Use verify-app" | Start server, hit endpoints, check logs, report |
+| Write tests | "Write tests for src/data/parsers.py" | Tests in isolated worktree, runs them |
+| Coverage analysis | "Use qa-tester" | Coverage matrix, missing tests list |
+| Parallel research | "Use 5 subagents to explore" | Parallel codebase exploration |
+| Requirement clarification | "Use product-manager" | Acceptance criteria in Given/When/Then |
+| Sync requirements | `/sync-requirements` | Sync controller JSONs from markdown |
+| Explain code | `/explain-code src/utils/config.py` | Visual explanation with diagrams |
+
+**14 practices — one prompt from the developer, fully autonomous execution.**
+
+### Developer-Guided (requires back-and-forth judgment)
+
+Claude does the work, but the developer makes decisions at checkpoints:
+
+| Practice | Why developer input is needed |
+|----------|------------------------------|
+| Plan-first workflow | Claude plans, developer iterates and approves before implementation |
+| CLAUDE.md updates from mistakes | Developer identifies what went wrong, tells Claude to add rule |
+| Troubleshooting documentation | Claude drafts after debugging, developer validates accuracy |
+| Plan review with second session | Developer spins up reviewer session, interprets feedback |
+| Prompting for verification ("prove it works") | Developer decides when/how to challenge Claude |
+| Elegant solution retry ("scrap and redo") | Developer judges first attempt, decides to restart |
+
+**6 practices — Claude does the heavy lifting, developer steers.**
+
+### Developer-Only (requires human action outside Claude Code)
+
+| Practice | Why |
+|----------|-----|
+| Launch parallel worktree sessions | Developer opens terminals, runs `claude --worktree <name>` |
+| Switch to auto-accept mode | Developer toggles the setting mid-session |
+| Model/effort selection (`/model`) | Developer preference, cost trade-off |
+| Terminal/statusline config (`/statusline`) | Personal preference |
+| Personal overrides (`CLAUDE.local.md`) | Developer creates and edits |
+| Mobile-to-desktop handoff (`--teleport`) | Physical device switch |
+| Background sessions (`Ctrl+B`) | Developer manages terminal sessions |
+| Voice dictation (`fn` x2) | Physical action |
+| MCP server configuration | Developer adds to settings.json, handles auth |
+| GitHub Action installation | Developer runs `/install-github-action`, configures repo |
+| Commit gating hook (not yet built) | Developer creates the hook script |
+| Plugin installation (`/plugin`) | Developer browses and selects |
+
+**12 practices — developer's hands required.**
+
+### Summary
+
+| Category | Count | % of 40 |
+|----------|-------|---------|
+| Fully autonomous | 8 | 20% |
+| Autonomous once invoked | 14 | 35% |
+| Developer-guided | 6 | 15% |
+| Developer-only | 12 | 30% |
+
+**55% of practices (22/40) run autonomously or with a single prompt.** The developer's main jobs are: launching sessions, choosing models, configuring integrations, and making judgment calls on plans. The actual coding, reviewing, testing, and verification work is handled by Claude.
+
+---
+
+## 16. References
 
 ### Boris Cherny's Workflow
 
