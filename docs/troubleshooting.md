@@ -30,57 +30,23 @@ uv run python -c "import yaml; yaml.safe_load(open('configs/dev.yaml'))"
 
 ---
 
-## Ingestion Pipeline
+## Data Pipeline
 
-### PDF parsing fails with encoding errors
+<!-- Add entries as issues are encountered -->
+<!-- Template:
+### <Short description>
 
-**Symptom:** `AppError(code=PARSE_FAILED)` when ingesting certain PDFs.
+**Symptom:** <What the user sees>
 
-**Root cause:** PDF contains scanned images without OCR text layer, or uses non-standard encoding.
-
-**Diagnostic commands:**
-```bash
-# Check if PDF has extractable text
-uv run python -c "from pypdf import PdfReader; r = PdfReader('path/to/file.pdf'); print(len(r.pages[0].extract_text()))"
-```
-
-**Resolution:** Verify the PDF has a text layer. Image-only PDFs are not supported in v1 (text extraction only).
-
-### URL fetch times out
-
-**Symptom:** `AppError(code=URL_FETCH_FAILED)` with timeout error.
+**Root cause:** <Why it happens>
 
 **Diagnostic commands:**
 ```bash
-# Test URL accessibility
-curl -sI --max-time 10 "https://example.com/page"
-
-# Check timeout config
-uv run python -c "from src.utils.config import settings; print(settings.ingestion.url_timeout)"
+<commands used to diagnose>
 ```
 
-**Resolution:** Check if the URL is accessible from the server. Increase `INGESTION__URL_TIMEOUT` if the site is slow. Check for firewall or proxy issues.
-
----
-
-## RAG / Chat
-
-### Chat returns "no relevant context found"
-
-**Symptom:** Chat responses indicate no indexed content matches the query, even when relevant documents are indexed.
-
-**Root cause:** Embedding mismatch, empty vector store, or similarity threshold too high.
-
-**Diagnostic commands:**
-```bash
-# Check vector store has entries
-uv run python -c "from src.utils.vector_store import get_vector_store; vs = get_vector_store(); print(vs.count())"
-
-# Check embedding model is loaded
-uv run python -c "from src.models.embeddings import create_embedding_model; m = create_embedding_model(); print(type(m))"
-```
-
-**Resolution:** Verify documents were fully ingested (check catalog for chunk count > 0). Try lowering the similarity threshold in settings. Re-index if the embedding model was changed.
+**Resolution:** <How to fix it>
+-->
 
 ---
 
@@ -95,7 +61,7 @@ uv run python -c "from src.models.embeddings import create_embedding_model; m = 
 **Diagnostic commands:**
 ```bash
 # Check ML deps are installed
-uv run python -c "import torch; import sentence_transformers; print('OK')"
+uv run python -c "import torch; print('OK')"
 
 # Check model backend setting
 uv run python -c "from src.utils.config import settings; print(settings.model_backend)"
@@ -123,3 +89,15 @@ grep "VARIABLE_NAME" .env
 ```
 
 **Resolution:** Restart the application. Check `configs/dev.yaml` isn't overriding the value. Env vars use `__` for nesting (e.g., `LLM__API_KEY`). See REQ-CFG-007.
+
+---
+
+## Testing
+
+<!-- Add entries as issues are encountered -->
+
+---
+
+## Deployment
+
+<!-- Add entries as issues are encountered -->

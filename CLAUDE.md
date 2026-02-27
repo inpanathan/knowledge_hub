@@ -117,8 +117,6 @@ bash scripts/sync_requirements.sh --dry-run          # preview changes
 All requirements files under `docs/requirements/` are authoritative sources for what must be implemented:
 
 - `docs/requirements/common_requirements.md` — cross-cutting standards (logging, observability, testing, security, config, errors, CI/CD, data management, documentation)
-- `docs/requirements/documentation_requirements.md` — agent document output and review standards
-- `docs/requirements/project_requirements_v1.md` — project-specific functional and non-functional requirements
 
 When implementing any feature, consult the relevant requirements files and their controller JSONs (`*_controller.json`). Only requirements with `"implement": "Y"` and `"enable": "Y"` in the controller are in scope. Ensure the implementation satisfies the requirement text, not just the summary.
 
@@ -141,5 +139,3 @@ When implementing any feature, consult the relevant requirements files and their
 See @pyproject.toml for dependencies and tool config.
 See @docs/app_cheatsheet.md for dev URLs, credentials, and operational commands.
 See @docs/requirements/common_requirements.md for project standards.
-See @docs/requirements/documentation_requirements.md for documentation standards.
-See @docs/requirements/project_requirements_v1.md for project-specific requirements.
