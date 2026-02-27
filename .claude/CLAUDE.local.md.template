@@ -1,0 +1,33 @@
+# Local Overrides (Personal)
+#
+# Copy this file to `.claude/CLAUDE.local.md` to customize Claude Code behavior
+# for your local environment. This file is gitignored and won't affect other developers.
+#
+# cp .claude/CLAUDE.local.md.template .claude/CLAUDE.local.md
+
+## Model preferences
+
+# Uncomment to prefer a specific model for subagents:
+# - Use haiku for quick tasks to save cost and reduce latency
+# - Use opus for complex architectural decisions
+
+## Workflow preferences
+
+# Uncomment or add your preferences:
+# - Always run tests before committing (already default)
+# - Skip typecheck during rapid iteration (not recommended for final commits)
+# - Preferred commit message style: conventional commits / free-form
+
+## Environment notes
+
+# Document anything specific to your local setup:
+# - Python version: 3.12.x
+# - OS: Ubuntu / macOS / WSL
+# - GPU available: yes / no
+# - Default MODEL_BACKEND: mock / local / cloud
+
+## Custom patterns
+
+# Add any personal conventions or reminders:
+# - I prefer verbose test output: use `uv run pytest -v` instead of `-q`
+# - My API key is in 1Password, not .env — remind me to export it

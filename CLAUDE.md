@@ -69,6 +69,9 @@ bash scripts/sync_requirements.sh --dry-run          # preview changes
 - Before ending a session on a long task, write progress to `.claude/scratchpad/<branch-name>.md`
 - Use subagents for broad codebase exploration to keep main context clean
 - Pre-commit hooks run ruff (lint+format) and mypy automatically on commit
+- **Lessons learned**: After resolving a non-trivial debugging session, document problem, root cause, and solution in `docs/troubleshooting.md` with the commands used (REQ-AGT-004)
+- **Cheatsheet maintenance**: When creating new scripts, commands, API endpoints, or config variables, update `docs/app_cheatsheet.md` before the task is complete
+- **Runbook maintenance**: When adding alert types, operational procedures, or failure modes, create/update the corresponding runbook in `docs/runbook/`
 
 ## Project structure
 
@@ -109,8 +112,34 @@ bash scripts/sync_requirements.sh --dry-run          # preview changes
 - `/explain-code src/utils/config.py` — visual explanation with diagrams
 - `/sync-requirements` — sync requirement controller JSONs from markdown
 
+## Requirements-driven development
+
+All requirements files under `docs/requirements/` are authoritative sources for what must be implemented:
+
+- `docs/requirements/common_requirements.md` — cross-cutting standards (logging, observability, testing, security, config, errors, CI/CD, data management, documentation)
+- `docs/requirements/documentation_requirements.md` — agent document output and review standards
+- `docs/requirements/project_requirements_v1.md` — project-specific functional and non-functional requirements
+
+When implementing any feature, consult the relevant requirements files and their controller JSONs (`*_controller.json`). Only requirements with `"implement": "Y"` and `"enable": "Y"` in the controller are in scope. Ensure the implementation satisfies the requirement text, not just the summary.
+
+## Planning rule
+
+**Always create a plan before any implementation work.** This is mandatory, no exceptions.
+
+1. **Create the plan first**: Before writing any code, produce a detailed implementation plan with numbered steps, sub-steps, files to create/modify, and acceptance criteria. Write the plan to `coding-agent/plans/<N>-<feature-or-branch-name>.md`, where `<N>` is the next sequential number (check existing files to determine the next number, starting from 1). This numbered sequence provides a clear history of all plans followed in the project.
+2. **Get user approval**: Present the plan to the user and wait for explicit approval before proceeding. Do not start implementation until the user confirms.
+3. **Maintain status**: As implementation progresses, update the plan file with status markers against each step:
+   - `[ ]` — not started
+   - `[~]` — in progress
+   - `[x]` — completed
+   - `[!]` — blocked (include reason)
+4. **Report progress**: When resuming work or after completing a major step, summarize current plan status to the user.
+5. **Plan changes**: If the plan needs to change mid-implementation (new requirements, blockers, design pivots), update the plan, highlight what changed, and get user re-approval before continuing.
+
 ## Key references
 
 See @pyproject.toml for dependencies and tool config.
 See @docs/app_cheatsheet.md for dev URLs, credentials, and operational commands.
 See @docs/requirements/common_requirements.md for project standards.
+See @docs/requirements/documentation_requirements.md for documentation standards.
+See @docs/requirements/project_requirements_v1.md for project-specific requirements.
