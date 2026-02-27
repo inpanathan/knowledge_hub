@@ -74,7 +74,7 @@ bash scripts/sync_requirements.sh --dry-run          # preview changes
 - **Runbook maintenance**: When adding alert types, operational procedures, or failure modes, create/update the corresponding runbook in `docs/runbook/`
 - **Parallel sessions**: For independent tasks, use `claude --worktree <name>` to run isolated sessions with separate git worktrees. Each session gets its own copy of the repo — no merge conflicts
 - **Model selection**: Use Opus for complex multi-file architectural work. Subagents default to Sonnet (fast, cost-effective). Use Haiku for exploration-only agents
-- **Verification**: After implementation, use the `verify-app` agent or `/run-checks` to validate before committing. Giving Claude a way to verify its work 2-3x the quality of results
+- **Verification**: After implementation, use the `verify-app` agent or `/run-checks` to validate before committing. Give Claude a way to verify its work — this 2-3x the quality of results
 - **Post-implementation cleanup**: Use the `code-simplifier` agent after completing a feature to reduce complexity before the PR
 
 ## Project structure
