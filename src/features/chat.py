@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from src.utils.cache import CacheStore
@@ -22,7 +22,7 @@ class ChatMessage:
 
     role: str  # "user" or "assistant"
     content: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     citations: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -49,7 +49,7 @@ class ChatSession:
 
     id: str
     messages: list[ChatMessage] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     source_filter: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:

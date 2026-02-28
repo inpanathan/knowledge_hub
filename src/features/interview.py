@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
@@ -84,7 +84,7 @@ class InterviewSession:
     difficulty: DifficultyLevel
     questions: list[InterviewQuestion] = field(default_factory=list)
     current_index: int = 0
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     completed: bool = False
     overall_score: float = 0.0
     overall_feedback: str = ""

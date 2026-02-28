@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from src.utils.cache import InMemoryCacheStore
 
@@ -49,7 +49,7 @@ def test_keys_prefix_pattern() -> None:
 
 def test_datetime_serialization() -> None:
     cache = InMemoryCacheStore()
-    now = datetime.utcnow()
+    now = datetime.now(tz=UTC)
     cache.set("key1", {"created": now.isoformat(), "nested": {"ts": now.isoformat()}})
     result = cache.get("key1")
     assert result is not None

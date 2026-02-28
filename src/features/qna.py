@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
@@ -78,7 +78,7 @@ class QASet:
     id: str
     topic: str
     pairs: list[QAPair] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(tz=UTC))
     difficulty: str = ""
 
     def to_dict(self) -> dict[str, Any]:

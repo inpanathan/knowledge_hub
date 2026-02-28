@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
@@ -34,7 +34,7 @@ class Source(BaseModel):
     source_type: SourceType
     origin: str = ""
     file_format: str = ""
-    ingested_at: datetime = Field(default_factory=datetime.utcnow)
+    ingested_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
     last_indexed_at: datetime | None = None
     content_hash: str = ""
     chunk_count: int = 0

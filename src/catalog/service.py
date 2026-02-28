@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from src.catalog.models import (
     ProcessingStatus,
@@ -37,7 +37,7 @@ class CatalogService:
             tags=data.tags,
             description=data.description,
             parent_folder_id=data.parent_folder_id,
-            ingested_at=datetime.utcnow(),
+            ingested_at=datetime.now(tz=UTC),
             status=ProcessingStatus.QUEUED,
         )
         return self._repo.create(source)
@@ -137,7 +137,7 @@ class CatalogService:
             content_hash=content_hash,
             original_file_path=original_file_path,
             description=description,
-            last_indexed_at=datetime.utcnow(),
+            last_indexed_at=datetime.now(tz=UTC),
         )
 
     def mark_failed(self, source_id: str, error: str) -> None:
