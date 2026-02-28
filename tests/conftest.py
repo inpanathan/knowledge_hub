@@ -38,6 +38,11 @@ def tmp_dir() -> Iterator[Path]:
         yield Path(d)
 
 
+# Override embedding defaults for tests (mock uses 384-dim)
+os.environ["EMBEDDING__MODEL_NAME"] = "all-MiniLM-L6-v2"
+os.environ["EMBEDDING__DIMENSION"] = "384"
+
+
 @pytest.fixture()
 def cache_store() -> InMemoryCacheStore:
     """Provide an in-memory cache store for testing."""
@@ -76,12 +81,9 @@ def file_store(tmp_dir: Path) -> FileStore:
 
 
 @pytest.fixture()
-def vector_store(tmp_dir: Path) -> VectorStore:
-    """Provide a vector store using a temp directory."""
-    return VectorStore(
-        persist_directory=str(tmp_dir / "vectorstore"),
-        collection_name="test_collection",
-    )
+def vector_store() -> VectorStore:
+    """Provide a Qdrant in-memory vector store for testing."""
+    return VectorStore(collection_name="test_collection", dimension=384, in_memory=True)
 
 
 @pytest.fixture()

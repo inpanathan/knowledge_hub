@@ -40,8 +40,8 @@ class ServerSettings(BaseSettings):
 class EmbeddingSettings(BaseSettings):
     """Embedding model configuration."""
 
-    model_name: str = "all-MiniLM-L6-v2"
-    dimension: int = 384
+    model_name: str = "BAAI/bge-large-en-v1.5"
+    dimension: int = 1024
     batch_size: int = 32
 
 
@@ -51,6 +51,7 @@ class VectorStoreSettings(BaseSettings):
     collection_name: str = "knowledge_hub"
     persist_directory: str = "data/vectorstore"
     distance_metric: str = "cosine"
+    url: str = "http://localhost:6333"
 
 
 class LLMSettings(BaseSettings):
@@ -61,6 +62,8 @@ class LLMSettings(BaseSettings):
     max_tokens: int = 1024
     temperature: float = 0.3
     timeout_seconds: int = 60
+    vllm_base_url: str = "http://localhost:8000/v1"
+    vllm_model: str = "Qwen/Qwen2.5-14B-Instruct"
 
 
 class ChunkingSettings(BaseSettings):

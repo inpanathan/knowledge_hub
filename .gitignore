@@ -42,6 +42,9 @@ Thumbs.db
 # Uploaded files (runtime, not tracked)
 data/uploads/
 
+# Qdrant persistent storage (runtime, not tracked)
+data/qdrant_storage/
+
 # Terminal recordings
 typescript
 

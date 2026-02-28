@@ -18,7 +18,6 @@ def client() -> Iterator[TestClient]:
     with tempfile.TemporaryDirectory() as tmp:
         # Isolate data dirs for this test session
         settings.catalog.database_path = f"{tmp}/catalog.db"
-        settings.vector_store.persist_directory = f"{tmp}/vectorstore"
         settings.file_store.base_directory = f"{tmp}/originals"
 
         app = create_app()

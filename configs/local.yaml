@@ -1,0 +1,25 @@
+# Local GPU stack configuration
+# Requires: vLLM server + Qdrant Docker container
+# Start with: bash scripts/start_qdrant.sh && bash scripts/start_vllm.sh
+
+model_backend: local
+app_debug: true
+
+embedding:
+  model_name: "BAAI/bge-large-en-v1.5"
+  dimension: 1024
+
+llm:
+  vllm_base_url: "http://localhost:8000/v1"
+  vllm_model: "Qwen/Qwen2.5-14B-Instruct"
+  temperature: 0.3
+  max_tokens: 1024
+  timeout_seconds: 120
+
+vector_store:
+  url: "http://localhost:6333"
+  collection_name: "knowledge_hub"
+
+logging:
+  level: "INFO"
+  format: "console"

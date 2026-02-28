@@ -1,4 +1,4 @@
-"""LLM client wrapper with mock and Claude API backends."""
+"""LLM client wrapper with mock, vLLM, and Claude API backends."""
 
 from __future__ import annotations
 
@@ -134,16 +134,89 @@ class ClaudeLLMClient:
             ) from e
 
 
+class VLLMLLMClient:
+    """LLM client using OpenAI-compatible API (vLLM, Ollama, etc.)."""
+
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        temperature: float = 0.3,
+        timeout: int = 60,
+    ) -> None:
+        try:
+            import openai
+
+            self._client = openai.OpenAI(base_url=base_url, api_key="not-needed")
+            self._model = model
+            self._temperature = temperature
+            self._timeout = timeout
+            logger.info("vllm_llm_loaded", model=model, base_url=base_url)
+        except ImportError as e:
+            raise AppError(
+                code=ErrorCode.MODEL_LOAD_FAILED,
+                message="openai SDK not installed — run: uv add openai",
+                cause=e,
+            ) from e
+
+    def generate(self, prompt: str, *, system: str = "", max_tokens: int = 1024) -> str:
+        """Generate a response via the OpenAI-compatible API."""
+        try:
+            import openai
+
+            messages: list = []
+            if system:
+                messages.append({"role": "system", "content": system})
+            messages.append({"role": "user", "content": prompt})
+
+            response = self._client.chat.completions.create(
+                model=self._model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=self._temperature,
+                timeout=self._timeout,
+            )
+            text = response.choices[0].message.content or ""
+            logger.info(
+                "llm_response_generated",
+                model=self._model,
+                input_tokens=getattr(response.usage, "prompt_tokens", None),
+                output_tokens=getattr(response.usage, "completion_tokens", None),
+            )
+            return text
+        except openai.APITimeoutError as e:
+            raise AppError(
+                code=ErrorCode.LLM_TIMEOUT,
+                message="vLLM API request timed out",
+                cause=e,
+            ) from e
+        except Exception as e:
+            raise AppError(
+                code=ErrorCode.LLM_GENERATION_FAILED,
+                message=f"LLM generation failed: {e}",
+                cause=e,
+            ) from e
+
+
 def create_llm_client(
     backend: str,
     api_key: str = "",
     model_id: str = "claude-sonnet-4-20250514",
     temperature: float = 0.3,
     timeout: int = 60,
+    vllm_base_url: str = "",
+    vllm_model: str = "",
 ) -> LLMClient:
     """Factory to create the appropriate LLM client."""
     if backend == "mock":
         return MockLLMClient()
+    if backend == "local":
+        return VLLMLLMClient(
+            base_url=vllm_base_url,
+            model=vllm_model,
+            temperature=temperature,
+            timeout=timeout,
+        )
     return ClaudeLLMClient(
         api_key=api_key,
         model_id=model_id,

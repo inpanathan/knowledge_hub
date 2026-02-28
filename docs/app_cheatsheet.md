@@ -104,7 +104,11 @@ uv run pytest tests/ --cov=src --cov-report=html
 | `MODEL_BACKEND` | `mock` | Model backend: `mock`, `local`, `cloud` |
 | `SECRET_KEY` | (required in prod) | Application secret key |
 | `DATABASE__URL` | — | Database connection string |
-| <!-- TODO: add project-specific env vars --> | | |
+| `EMBEDDING__MODEL_NAME` | `BAAI/bge-large-en-v1.5` | Embedding model name |
+| `EMBEDDING__DIMENSION` | `1024` | Embedding vector dimension |
+| `LLM__VLLM_BASE_URL` | `http://localhost:8000/v1` | vLLM OpenAI-compatible API URL |
+| `LLM__VLLM_MODEL` | `Qwen/Qwen2.5-14B-Instruct` | Model served by vLLM |
+| `VECTOR_STORE__URL` | `http://localhost:6333` | Qdrant server URL |
 
 ## Monitoring
 
@@ -125,7 +129,9 @@ uv run pytest tests/ --cov=src --cov-report=html
 | `src/models/` | ML model wrappers |
 | `src/observability/` | Metrics, alerts, audit |
 | `configs/dev.yaml` | Development configuration |
-| <!-- TODO: add project-specific key files --> | |
+| `configs/local.yaml` | Local GPU stack configuration |
+| `scripts/start_vllm.sh` | Start/stop vLLM inference server |
+| `scripts/start_qdrant.sh` | Start/stop Qdrant vector database |
 
 ## Scripts
 
@@ -206,6 +212,26 @@ bash frontend/scripts/stop.sh
 
 **Typical dev workflow:** Start the backend first (`bash scripts/start_server.sh`), then in a second terminal start the frontend (`bash frontend/scripts/start.sh`). The frontend dev server proxies API calls to the backend.
 
+### Local GPU Stack (vLLM + Qdrant)
+
+```bash
+# Start Qdrant vector database (Docker)
+bash scripts/start_qdrant.sh
+
+# Start vLLM inference server (default: Qwen2.5-14B-Instruct)
+bash scripts/start_vllm.sh
+
+# Start with a different model
+bash scripts/start_vllm.sh Qwen/Qwen2.5-7B-Instruct
+
+# Stop services
+bash scripts/start_vllm.sh stop
+bash scripts/start_qdrant.sh stop
+
+# Check Qdrant status
+bash scripts/start_qdrant.sh status
+```
+
 ### Data & Models
 
 ```bash
@@ -257,23 +283,22 @@ Syncs `docs/requirements/*_controller.json` from the corresponding `*_requiremen
 # 1. Setup environment
 bash scripts/setup.sh
 
-# 2. Set MODEL_BACKEND=local in .env
+# 2. Set MODEL_BACKEND=local in .env (or use APP_ENV=local with configs/local.yaml)
 #    (setup.sh creates .env from .env.example — edit the MODEL_BACKEND line)
 
 # 3. Install ML + optional dependencies
 uv sync --extra dev --extra ml
 
-# 4. Setup database
-sudo bash scripts/db_setup.sh        # Create user + database
-bash scripts/db_migrate.sh upgrade   # Apply migrations
-bash scripts/db_seed.sh              # Seed development data
+# 4. Start infrastructure services
+bash scripts/start_qdrant.sh         # Start Qdrant (Docker)
 
-# 5. Download model weights
-bash scripts/download_models.sh
+# 5. Start vLLM inference server (separate terminal)
+bash scripts/start_vllm.sh           # Serves Qwen2.5-14B-Instruct on port 8000
 
-# 6. Start the server
-bash scripts/start_server.sh
+# 6. Start the application server
+APP_ENV=local bash scripts/start_server.sh
 
-# 7. Verify with integration tests
+# 7. Verify
+curl http://localhost:8000/health
 MODEL_BACKEND=local uv run pytest tests/integration/ -v
 ```

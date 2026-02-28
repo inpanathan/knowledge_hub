@@ -55,8 +55,10 @@ def init_services() -> ServiceContainer:
     catalog = CatalogService(catalog_repo)
     file_store = FileStore(settings.file_store.base_directory)
     vector_store = VectorStore(
-        persist_directory=settings.vector_store.persist_directory,
+        url=settings.vector_store.url,
         collection_name=settings.vector_store.collection_name,
+        dimension=settings.embedding.dimension,
+        in_memory=(settings.model_backend == "mock"),
     )
 
     # Models
@@ -71,6 +73,8 @@ def init_services() -> ServiceContainer:
         model_id=settings.llm.model_id,
         temperature=settings.llm.temperature,
         timeout=settings.llm.timeout_seconds,
+        vllm_base_url=settings.llm.vllm_base_url,
+        vllm_model=settings.llm.vllm_model,
     )
 
     # Cache
