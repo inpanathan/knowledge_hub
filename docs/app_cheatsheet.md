@@ -1,6 +1,6 @@
 # App Cheatsheet
 
-**<PROJECT_NAME> — Quick Reference**
+**Knowledge Hub — Quick Reference**
 
 ## URLs & Endpoints
 
@@ -8,11 +8,11 @@
 
 | URL | Description |
 |-----|-------------|
-| `http://localhost:<FRONTEND_PORT>` | Frontend (dev server, proxies API to backend) |
-| `http://localhost:<BACKEND_PORT>` | Backend API root |
-| `http://localhost:<BACKEND_PORT>/health` | Health check |
-| `http://localhost:<BACKEND_PORT>/docs` | Swagger/OpenAPI docs |
-| `http://localhost:<BACKEND_PORT>/redoc` | ReDoc API docs |
+| `http://localhost:3000` | Frontend (Vite dev server, proxies `/api` to backend) |
+| `http://localhost:8000` | Backend API root |
+| `http://localhost:8000/health` | Health check |
+| `http://localhost:8000/docs` | Swagger/OpenAPI docs |
+| `http://localhost:8000/redoc` | ReDoc API docs |
 
 ### Dev Login Credentials
 

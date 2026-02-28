@@ -66,6 +66,9 @@ def create_app() -> FastAPI:
     # Include API routes
     app.include_router(router, prefix="/api/v1")
 
+    # Serve frontend static files in production (after API routes so they take priority)
+    _mount_frontend(app)
+
     @app.get("/health")
     async def health_check(request: Request) -> dict:  # noqa: ARG001
         return {
@@ -82,6 +85,29 @@ def create_app() -> FastAPI:
         )
 
     return app
+
+
+def _mount_frontend(app: FastAPI) -> None:  # type: ignore[name-defined]
+    """Mount the frontend SPA from frontend/dist/ if it exists."""
+    from pathlib import Path
+
+    dist_dir = Path(__file__).parent / "frontend" / "dist"
+    if not dist_dir.is_dir():
+        logger.info("frontend_not_built", path=str(dist_dir))
+        return
+
+    from fastapi.responses import FileResponse
+    from fastapi.staticfiles import StaticFiles
+
+    # Serve static assets (JS, CSS, images)
+    app.mount("/assets", StaticFiles(directory=dist_dir / "assets"), name="frontend-assets")
+
+    # SPA fallback — serve index.html for all non-API, non-asset routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str) -> FileResponse:  # noqa: ARG001
+        return FileResponse(dist_dir / "index.html")
+
+    logger.info("frontend_mounted", path=str(dist_dir))
 
 
 def _error_code_to_status(code: str) -> int:
