@@ -23,6 +23,7 @@ dependencies = [
     "anthropic>=0.42.0",
     "aiofiles>=24.1.0",
     "redis[hiredis]>=5.0.0",
+    "vllm>=0.16.0",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,12 @@ ml = [
     "numpy>=2.1.0",
     "Pillow>=11.0.0",
     "scikit-learn>=1.6.0",
+]
+books = [
+    "google-api-python-client>=2.150.0",
+    "google-auth-oauthlib>=1.2.0",
+    "google-auth-httplib2>=0.2.0",
+    "ebooklib>=0.18",
 ]
 cloud = [
     "google-api-python-client>=2.150.0",

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.books.repository import BookRepository
+from src.books.service import BookService
 from src.catalog.repository import CatalogRepository
 from src.catalog.service import CatalogService
 from src.data.file_store import FileStore
@@ -31,6 +33,7 @@ logger = get_logger(__name__)
 class ServiceContainer:
     """Holds all initialized service instances."""
 
+    books: BookService
     catalog: CatalogService
     file_store: FileStore
     vector_store: VectorStore
@@ -53,6 +56,8 @@ def init_services() -> ServiceContainer:
     # Core infrastructure
     catalog_repo = CatalogRepository(settings.catalog.database_path)
     catalog = CatalogService(catalog_repo)
+    book_repo = BookRepository(settings.books.database_path)
+    books = BookService(book_repo)
     file_store = FileStore(settings.file_store.base_directory)
     vector_store = VectorStore(
         url=settings.vector_store.url,
@@ -66,6 +71,7 @@ def init_services() -> ServiceContainer:
         backend=settings.model_backend,
         model_name=settings.embedding.model_name,
         dimension=settings.embedding.dimension,
+        device=settings.embedding.device,
     )
     llm_client = create_llm_client(
         backend=settings.model_backend,
@@ -126,6 +132,7 @@ def init_services() -> ServiceContainer:
     )
 
     _container = ServiceContainer(
+        books=books,
         catalog=catalog,
         file_store=file_store,
         vector_store=vector_store,
@@ -187,3 +194,7 @@ def get_summarization() -> SummarizationService:
 
 def get_vector_store() -> VectorStore:
     return get_container().vector_store
+
+
+def get_books() -> BookService:
+    return get_container().books

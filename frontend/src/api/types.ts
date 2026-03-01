@@ -209,3 +209,52 @@ export interface InterviewSummary {
   overall_feedback: string;
   questions: InterviewQuestion[];
 }
+
+// ---------- Books ----------
+
+export interface BookSummary {
+  id: string;
+  title: string;
+  author: string;
+  file_format: string;
+  publication_year: number | null;
+  cover_image_path: string;
+  tags: string[];
+  embedding_status: string;
+}
+
+export interface BookDetail {
+  id: string;
+  title: string;
+  author: string;
+  isbn: string;
+  publisher: string;
+  publication_year: number | null;
+  language: string;
+  page_count: number | null;
+  file_format: string;
+  file_size_bytes: number;
+  cover_image_path: string;
+  description: string;
+  table_of_contents: string[];
+  tags: string[];
+  drive_folder_path: string;
+  drive_file_id: string;
+  created_at: string;
+  processed_at: string | null;
+  embedding_status: string;
+  graph_status: string;
+  source_id: string | null;
+}
+
+export interface BookListResponse {
+  books: BookSummary[];
+  total: number;
+}
+
+export interface BookUpdateRequest {
+  title?: string;
+  author?: string;
+  tags?: string[];
+  description?: string;
+}

@@ -23,3 +23,13 @@ vector_store:
 logging:
   level: "INFO"
   format: "console"
+
+google_drive:
+  credentials_file: "configs/gdrive_credentials.json"
+  token_file: "data/gdrive_token.json"
+  folder_id: ""
+
+books:
+  storage_dir: "/opt/document-store/books/"
+  covers_dir: "/opt/document-store/covers/"
+  database_path: "data/catalog.db"

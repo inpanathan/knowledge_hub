@@ -14,3 +14,13 @@ server:
   port: 8000
   reload: true
   workers: 1
+
+google_drive:
+  credentials_file: "configs/gdrive_credentials.json"
+  token_file: "data/gdrive_token.json"
+  folder_id: ""
+
+books:
+  storage_dir: "data/books/"
+  covers_dir: "data/covers/"
+  database_path: "data/catalog.db"

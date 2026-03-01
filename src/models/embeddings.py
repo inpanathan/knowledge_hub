@@ -63,13 +63,18 @@ class MockEmbeddingModel:
 class SentenceTransformerEmbeddingModel:
     """Real embedding model using sentence-transformers."""
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", dimension: int = 384) -> None:
+    def __init__(
+        self,
+        model_name: str = "all-MiniLM-L6-v2",
+        dimension: int = 384,
+        device: str = "cpu",
+    ) -> None:
         self._dimension = dimension
         try:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(model_name)
-            logger.info("embedding_model_loaded", model=model_name)
+            self._model = SentenceTransformer(model_name, device=device)
+            logger.info("embedding_model_loaded", model=model_name, device=device)
         except ImportError as e:
             raise AppError(
                 code=ErrorCode.MODEL_LOAD_FAILED,
@@ -99,8 +104,12 @@ class SentenceTransformerEmbeddingModel:
         return results[0]
 
 
-def create_embedding_model(backend: str, model_name: str, dimension: int) -> EmbeddingModel:
+def create_embedding_model(
+    backend: str, model_name: str, dimension: int, device: str = "cpu"
+) -> EmbeddingModel:
     """Factory to create the appropriate embedding model."""
     if backend == "mock":
         return MockEmbeddingModel(dimension=dimension)
-    return SentenceTransformerEmbeddingModel(model_name=model_name, dimension=dimension)
+    return SentenceTransformerEmbeddingModel(
+        model_name=model_name, dimension=dimension, device=device
+    )

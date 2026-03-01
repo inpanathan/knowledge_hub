@@ -6,6 +6,7 @@ import {
   FileText,
   HelpCircle,
   GraduationCap,
+  BookOpen,
   Sun,
   Moon,
   PanelLeftClose,
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { to: "/summarize", icon: FileText, label: "Summarize" },
   { to: "/qna", icon: HelpCircle, label: "Q&A" },
   { to: "/interview", icon: GraduationCap, label: "Interview" },
+  { to: "/library", icon: BookOpen, label: "Library" },
 ];
 
 export function Sidebar() {

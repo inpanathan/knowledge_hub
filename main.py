@@ -66,9 +66,6 @@ def create_app() -> FastAPI:
     # Include API routes
     app.include_router(router, prefix="/api/v1")
 
-    # Serve frontend static files in production (after API routes so they take priority)
-    _mount_frontend(app)
-
     @app.get("/health")
     async def health_check(request: Request) -> dict:  # noqa: ARG001
         return {
@@ -76,6 +73,9 @@ def create_app() -> FastAPI:
             "env": settings.app_env,
             "version": "0.1.0",
         }
+
+    # Serve frontend static files (after API routes + health so they take priority)
+    _mount_frontend(app)
 
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:  # noqa: ARG001
@@ -120,7 +120,11 @@ def _error_code_to_status(code: str) -> int:
         "SOURCE_NOT_FOUND": 404,
         "FILE_NOT_FOUND": 404,
         "SESSION_NOT_FOUND": 404,
+        "BOOK_NOT_FOUND": 404,
+        "GDRIVE_FOLDER_NOT_FOUND": 404,
+        "GDRIVE_AUTH_FAILED": 401,
         "DUPLICATE_SOURCE": 409,
+        "BOOK_DUPLICATE": 409,
         "FILE_TOO_LARGE": 413,
         "UNSUPPORTED_FORMAT": 415,
         "RATE_LIMITED": 429,

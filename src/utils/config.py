@@ -43,6 +43,7 @@ class EmbeddingSettings(BaseSettings):
     model_name: str = "BAAI/bge-large-en-v1.5"
     dimension: int = 1024
     batch_size: int = 32
+    device: str = "cpu"
 
 
 class VectorStoreSettings(BaseSettings):
@@ -113,6 +114,32 @@ class CatalogSettings(BaseSettings):
     database_path: str = "data/catalog.db"
 
 
+class GoogleDriveSettings(BaseSettings):
+    """Google Drive integration configuration."""
+
+    credentials_file: str = "configs/gdrive_credentials.json"
+    token_file: str = "data/gdrive_token.json"
+    folder_id: str = ""
+    scopes: list[str] = Field(
+        default_factory=lambda: ["https://www.googleapis.com/auth/drive.readonly"]
+    )
+
+
+class BooksSettings(BaseSettings):
+    """Book library configuration."""
+
+    storage_dir: str = "/opt/document-store/books/"
+    covers_dir: str = "/opt/document-store/covers/"
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    embedding_batch_size: int = 32
+    qdrant_collection: str = "books"
+    database_path: str = "data/catalog.db"
+    supported_formats: list[str] = Field(
+        default_factory=lambda: [".pdf", ".epub", ".docx", ".txt", ".md"]
+    )
+
+
 class Settings(BaseSettings):
     """Root application settings.
 
@@ -145,11 +172,13 @@ class Settings(BaseSettings):
     rag: RAGSettings = Field(default_factory=RAGSettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     catalog: CatalogSettings = Field(default_factory=CatalogSettings)
+    google_drive: GoogleDriveSettings = Field(default_factory=GoogleDriveSettings)
+    books: BooksSettings = Field(default_factory=BooksSettings)
 
     @field_validator("app_env")
     @classmethod
     def validate_app_env(cls, v: str) -> str:
-        allowed = {"dev", "staging", "production", "test"}
+        allowed = {"dev", "staging", "production", "test", "local"}
         if v not in allowed:
             msg = f"app_env must be one of {allowed}, got '{v}'"
             raise ValueError(msg)

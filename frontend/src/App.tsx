@@ -7,6 +7,7 @@ import { SourcesPage } from "@/features/sources/SourcesPage";
 import { SummarizePage } from "@/features/summarize/SummarizePage";
 import { QnAPage } from "@/features/qna/QnAPage";
 import { InterviewPage } from "@/features/interview/InterviewPage";
+import { LibraryPage } from "@/features/library/LibraryPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="qna" element={<QnAPage />} />
               <Route path="interview" element={<InterviewPage />} />
               <Route path="interview/:sessionId" element={<InterviewPage />} />
+              <Route path="library" element={<LibraryPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

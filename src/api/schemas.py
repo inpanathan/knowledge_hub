@@ -277,3 +277,61 @@ class InterviewSummaryResponse(BaseModel):
     overall_score: float
     overall_feedback: str
     questions: list[InterviewQuestionResponse]
+
+
+# ---------- Books ----------
+
+
+class BookSummaryResponse(BaseModel):
+    """Lightweight book info for list views."""
+
+    id: str
+    title: str
+    author: str
+    file_format: str
+    publication_year: int | None
+    cover_image_path: str
+    tags: list[str]
+    embedding_status: str
+
+
+class BookDetailResponse(BaseModel):
+    """Full book detail."""
+
+    id: str
+    title: str
+    author: str
+    isbn: str
+    publisher: str
+    publication_year: int | None
+    language: str
+    page_count: int | None
+    file_format: str
+    file_size_bytes: int
+    cover_image_path: str
+    description: str
+    table_of_contents: list[str]
+    tags: list[str]
+    drive_folder_path: str
+    drive_file_id: str
+    created_at: datetime
+    processed_at: datetime | None
+    embedding_status: str
+    graph_status: str
+    source_id: str | None
+
+
+class BookListApiResponse(BaseModel):
+    """Paginated book list."""
+
+    books: list[BookSummaryResponse]
+    total: int
+
+
+class BookUpdateRequest(BaseModel):
+    """Editable book fields."""
+
+    title: str | None = None
+    author: str | None = None
+    tags: list[str] | None = None
+    description: str | None = None

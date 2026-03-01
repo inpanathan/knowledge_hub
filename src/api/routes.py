@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, Form, UploadFile
 from fastapi.responses import Response
 
 from src.api.dependencies import (
+    get_books,
     get_catalog,
     get_chat,
     get_file_store,
@@ -22,6 +23,10 @@ from src.api.dependencies import (
     get_vector_store,
 )
 from src.api.schemas import (
+    BookDetailResponse,
+    BookListApiResponse,
+    BookSummaryResponse,
+    BookUpdateRequest,
     ChatMessageResponse,
     ChatRequest,
     ChatResponse,
@@ -49,6 +54,8 @@ from src.api.schemas import (
     TextIngestionRequest,
     UrlIngestionRequest,
 )
+from src.books.models import BookUpdate
+from src.books.service import BookService
 from src.catalog.models import SourceUpdate
 from src.catalog.service import CatalogService
 from src.data.file_store import FileStore
@@ -624,3 +631,213 @@ async def get_interview_summary(
             for q in session.questions
         ],
     )
+
+
+# ── Books ────────────────────────────────────────────────────────────────
+
+
+@router.get("/books", response_model=BookListApiResponse)
+async def list_books(
+    books: Annotated[BookService, Depends(get_books)],
+    author: str | None = None,
+    tag: str | None = None,
+    search: str | None = None,
+    embedding_status: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> BookListApiResponse:
+    """List all books with optional filters."""
+    result = books.list_books(
+        author=author,
+        tag=tag,
+        search=search,
+        embedding_status=embedding_status,
+        limit=limit,
+        offset=offset,
+    )
+    return BookListApiResponse(
+        books=[
+            BookSummaryResponse(
+                id=b.id,
+                title=b.title,
+                author=b.author,
+                file_format=b.file_format,
+                publication_year=b.publication_year,
+                cover_image_path=b.cover_image_path,
+                tags=b.tags,
+                embedding_status=b.embedding_status,
+            )
+            for b in result.books
+        ],
+        total=result.total,
+    )
+
+
+@router.get("/books/{book_id}", response_model=BookDetailResponse)
+async def get_book(
+    book_id: str,
+    books: Annotated[BookService, Depends(get_books)],
+) -> BookDetailResponse:
+    """Get full book detail."""
+    book = books.get_book(book_id)
+    return BookDetailResponse(
+        id=book.id,
+        title=book.title,
+        author=book.author,
+        isbn=book.isbn,
+        publisher=book.publisher,
+        publication_year=book.publication_year,
+        language=book.language,
+        page_count=book.page_count,
+        file_format=book.file_format,
+        file_size_bytes=book.file_size_bytes,
+        cover_image_path=book.cover_image_path,
+        description=book.description,
+        table_of_contents=book.table_of_contents,
+        tags=book.tags,
+        drive_folder_path=book.drive_folder_path,
+        drive_file_id=book.drive_file_id,
+        created_at=book.created_at,
+        processed_at=book.processed_at,
+        embedding_status=book.embedding_status,
+        graph_status=book.graph_status,
+        source_id=book.source_id,
+    )
+
+
+@router.put("/books/{book_id}", response_model=BookDetailResponse)
+async def update_book(
+    book_id: str,
+    body: BookUpdateRequest,
+    books: Annotated[BookService, Depends(get_books)],
+) -> BookDetailResponse:
+    """Update book metadata (title, author, tags, description)."""
+    updated = books.update_book(
+        book_id,
+        BookUpdate(
+            title=body.title, author=body.author, tags=body.tags, description=body.description
+        ),
+    )
+    return BookDetailResponse(
+        id=updated.id,
+        title=updated.title,
+        author=updated.author,
+        isbn=updated.isbn,
+        publisher=updated.publisher,
+        publication_year=updated.publication_year,
+        language=updated.language,
+        page_count=updated.page_count,
+        file_format=updated.file_format,
+        file_size_bytes=updated.file_size_bytes,
+        cover_image_path=updated.cover_image_path,
+        description=updated.description,
+        table_of_contents=updated.table_of_contents,
+        tags=updated.tags,
+        drive_folder_path=updated.drive_folder_path,
+        drive_file_id=updated.drive_file_id,
+        created_at=updated.created_at,
+        processed_at=updated.processed_at,
+        embedding_status=updated.embedding_status,
+        graph_status=updated.graph_status,
+        source_id=updated.source_id,
+    )
+
+
+@router.delete("/books/{book_id}", status_code=204)
+async def delete_book(
+    book_id: str,
+    books: Annotated[BookService, Depends(get_books)],
+) -> None:
+    """Delete a book and its file."""
+    from pathlib import Path as _Path
+
+    book = books.get_book(book_id)
+    # Clean up files
+    if book.file_path:
+        _Path(book.file_path).unlink(missing_ok=True)
+    if book.cover_image_path:
+        _Path(book.cover_image_path).unlink(missing_ok=True)
+    books.delete_book(book_id)
+
+
+@router.get("/books/{book_id}/download")
+async def download_book(
+    book_id: str,
+    books: Annotated[BookService, Depends(get_books)],
+) -> Response:
+    """Download the original book file."""
+    from pathlib import Path as _Path
+
+    from src.utils.config import settings as _settings
+
+    book = books.get_book(book_id)
+    if not book.file_path:
+        raise AppError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message="Book file path not set",
+            context={"book_id": book_id},
+        )
+
+    file_path = _Path(book.file_path).resolve()
+    storage_dir = _Path(_settings.books.storage_dir).resolve()
+    if not str(file_path).startswith(str(storage_dir)):
+        raise AppError(
+            code=ErrorCode.VALIDATION_ERROR,
+            message="Invalid file path",
+            context={"book_id": book_id},
+        )
+
+    if not file_path.exists():
+        raise AppError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message="Book file not found on disk",
+            context={"book_id": book_id, "path": str(file_path)},
+        )
+
+    file_bytes = file_path.read_bytes()
+    filename = file_path.name
+    content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return Response(
+        content=file_bytes,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/books/{book_id}/cover")
+async def get_book_cover(
+    book_id: str,
+    books: Annotated[BookService, Depends(get_books)],
+) -> Response:
+    """Get the book's cover image."""
+    from pathlib import Path as _Path
+
+    from src.utils.config import settings as _settings
+
+    book = books.get_book(book_id)
+    if not book.cover_image_path:
+        raise AppError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message="No cover image available",
+            context={"book_id": book_id},
+        )
+
+    cover_path = _Path(book.cover_image_path).resolve()
+    covers_dir = _Path(_settings.books.covers_dir).resolve()
+    if not str(cover_path).startswith(str(covers_dir)):
+        raise AppError(
+            code=ErrorCode.VALIDATION_ERROR,
+            message="Invalid cover path",
+            context={"book_id": book_id},
+        )
+
+    if not cover_path.exists():
+        raise AppError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message="Cover image file not found",
+            context={"book_id": book_id},
+        )
+
+    cover_bytes = cover_path.read_bytes()
+    content_type = mimetypes.guess_type(cover_path.name)[0] or "image/jpeg"
+    return Response(content=cover_bytes, media_type=content_type)

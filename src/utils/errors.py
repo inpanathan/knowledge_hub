@@ -64,6 +64,16 @@ class ErrorCode(StrEnum):
     # Sessions
     SESSION_NOT_FOUND = "SESSION_NOT_FOUND"
 
+    # Google Drive
+    GDRIVE_AUTH_FAILED = "GDRIVE_AUTH_FAILED"
+    GDRIVE_DOWNLOAD_FAILED = "GDRIVE_DOWNLOAD_FAILED"
+    GDRIVE_FOLDER_NOT_FOUND = "GDRIVE_FOLDER_NOT_FOUND"
+
+    # Books
+    BOOK_NOT_FOUND = "BOOK_NOT_FOUND"
+    BOOK_DUPLICATE = "BOOK_DUPLICATE"
+    BOOK_METADATA_FAILED = "BOOK_METADATA_FAILED"
+
 
 class AppError(Exception):
     """Base application error with structured context.

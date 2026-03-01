@@ -13,6 +13,7 @@
 | `http://localhost:8000/health` | Health check |
 | `http://localhost:8000/docs` | Swagger/OpenAPI docs |
 | `http://localhost:8000/redoc` | ReDoc API docs |
+| `http://localhost:3000/library` | Library page (book collection) |
 
 ### Dev Login Credentials
 
@@ -70,6 +71,12 @@ Seeded by `bash scripts/db_seed.sh`. Password for all accounts: `<!-- TODO: fill
 | `POST` | `/interview/start` | Start an interview preparation session |
 | `POST` | `/interview/{id}/answer` | Submit answer, get feedback + next question |
 | `GET` | `/interview/{id}/summary` | Get interview summary with scores |
+| `GET` | `/books` | List books with filters (author, tag, search, embedding_status) |
+| `GET` | `/books/{id}` | Get full book detail |
+| `PUT` | `/books/{id}` | Update book metadata (title, author, tags, description) |
+| `DELETE` | `/books/{id}` | Delete book and associated files |
+| `GET` | `/books/{id}/download` | Download the book file |
+| `GET` | `/books/{id}/cover` | Serve the book cover image |
 
 ## Commands
 
@@ -109,6 +116,12 @@ uv run pytest tests/ --cov=src --cov-report=html
 | `LLM__VLLM_BASE_URL` | `http://localhost:8000/v1` | vLLM OpenAI-compatible API URL |
 | `LLM__VLLM_MODEL` | `Qwen/Qwen2.5-14B-Instruct` | Model served by vLLM |
 | `VECTOR_STORE__URL` | `http://localhost:6333` | Qdrant server URL |
+| `GOOGLE_DRIVE__CREDENTIALS_FILE` | `configs/gdrive_credentials.json` | Google OAuth credentials file |
+| `GOOGLE_DRIVE__TOKEN_FILE` | `data/gdrive_token.json` | Cached OAuth token |
+| `GOOGLE_DRIVE__FOLDER_ID` | — | Google Drive folder ID for book downloads |
+| `BOOKS__STORAGE_DIR` | `/opt/document-store/books/` | Book file storage directory |
+| `BOOKS__COVERS_DIR` | `/opt/document-store/covers/` | Book cover image directory |
+| `BOOKS__DATABASE_PATH` | `data/catalog.db` | SQLite database for book catalog |
 
 ## Monitoring
 
@@ -130,6 +143,11 @@ uv run pytest tests/ --cov=src --cov-report=html
 | `src/observability/` | Metrics, alerts, audit |
 | `configs/dev.yaml` | Development configuration |
 | `configs/local.yaml` | Local GPU stack configuration |
+| `src/books/` | Book catalog models, repository, service |
+| `src/data/gdrive_client.py` | Google Drive API wrapper |
+| `src/data/book_metadata.py` | Multi-format book metadata extraction |
+| `scripts/download_books.py` | Download books from Google Drive |
+| `scripts/seed_books.sh` | Book seeding orchestrator |
 | `scripts/start_vllm.sh` | Start/stop vLLM inference server |
 | `scripts/start_qdrant.sh` | Start/stop Qdrant vector database |
 
@@ -230,6 +248,22 @@ bash scripts/start_qdrant.sh stop
 
 # Check Qdrant status
 bash scripts/start_qdrant.sh status
+```
+
+### Book Library
+
+```bash
+# Install book dependencies (Google Drive + EPUB support)
+uv sync --extra dev --extra books
+
+# List books in Google Drive folder (no downloads)
+bash scripts/seed_books.sh --dry-run
+
+# Download and catalog books from Google Drive
+bash scripts/seed_books.sh
+
+# Check book library status (counts)
+bash scripts/seed_books.sh status
 ```
 
 ### Data & Models

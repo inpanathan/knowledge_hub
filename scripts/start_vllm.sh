@@ -31,21 +31,21 @@ GPU_MEM="${VLLM_GPU_MEMORY_UTIL:-0.90}"
 # Handle stop command
 if [ "$MODEL" = "stop" ]; then
     echo "Stopping vLLM server on port $PORT..."
-    PID=$(lsof -ti:"$PORT" 2>/dev/null || true)
-    if [ -n "$PID" ]; then
-        kill "$PID"
-        echo "Stopped process $PID"
+    PIDS=$(lsof -ti:"$PORT" 2>/dev/null || true)
+    if [ -n "$PIDS" ]; then
+        echo "$PIDS" | xargs kill 2>/dev/null || true
+        echo "Stopped processes on port $PORT"
     else
         echo "No process found on port $PORT"
     fi
     exit 0
 fi
 
-# Kill existing process on port (REQ-RUN-009)
-EXISTING_PID=$(lsof -ti:"$PORT" 2>/dev/null || true)
-if [ -n "$EXISTING_PID" ]; then
-    echo "Killing existing process $EXISTING_PID on port $PORT..."
-    kill "$EXISTING_PID"
+# Kill existing processes on port (REQ-RUN-009)
+EXISTING_PIDS=$(lsof -ti:"$PORT" 2>/dev/null || true)
+if [ -n "$EXISTING_PIDS" ]; then
+    echo "Killing existing processes on port $PORT..."
+    echo "$EXISTING_PIDS" | xargs kill 2>/dev/null || true
     sleep 2
 fi
 
