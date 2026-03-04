@@ -1,0 +1,18 @@
+# vLLM configuration — single-node AWQ on RTX 3090.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vllm-config
+  namespace: vllm
+  labels:
+    app.kubernetes.io/name: vllm
+    app.kubernetes.io/part-of: knowledge-hub
+data:
+  # Model (AWQ 4-bit, ~8GB on single GPU)
+  VLLM_MODEL: "Qwen/Qwen2.5-14B-Instruct-AWQ"
+  MAX_MODEL_LEN: "8192"
+
+  # HuggingFace cache (mapped from hostPath)
+  HUGGINGFACE_HUB_CACHE: "/model-weights"
+  HF_HUB_OFFLINE: "1"

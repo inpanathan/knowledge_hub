@@ -83,8 +83,23 @@ class GoogleDriveClient:
                         message=f"Credentials file not found: {self._credentials_file}",
                         context={"credentials_file": self._credentials_file},
                     )
-                flow = InstalledAppFlow.from_client_secrets_file(str(creds_path), self._scopes)
-                creds = flow.run_local_server(port=0)
+
+                import json
+
+                raw = json.loads(creds_path.read_text())
+                if "installed" in raw:
+                    flow = InstalledAppFlow.from_client_secrets_file(str(creds_path), self._scopes)
+                    creds = flow.run_local_server(port=0)
+                else:
+                    # Web credentials — require pre-authenticated token
+                    raise AppError(
+                        code=ErrorCode.GDRIVE_AUTH_FAILED,
+                        message=(
+                            "No valid token found. Run: "
+                            "uv run python scripts/authenticate_gdrive_console.py"
+                        ),
+                        context={"token_file": self._token_file},
+                    )
 
             # Save token for next run
             token_path.parent.mkdir(parents=True, exist_ok=True)

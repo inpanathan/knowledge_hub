@@ -1,0 +1,141 @@
+# vLLM single-node: AWQ 4-bit quantized Qwen2.5-14B-Instruct on RTX 3090.
+# Qwen2.5-14B-Instruct-AWQ (~8GB) fits comfortably on 24GB with ~14GB for KV cache.
+#
+# Multi-node PP was attempted (Plans 11, 11b, 12) but NCCL crashes over both
+# flannel VXLAN and Tailscale WireGuard. Single-node AWQ is the stable fallback.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-head
+  namespace: vllm
+  labels:
+    app.kubernetes.io/name: vllm
+    app.kubernetes.io/component: head
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 600
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vllm
+      app.kubernetes.io/component: head
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vllm
+        app.kubernetes.io/component: head
+    spec:
+      runtimeClassName: nvidia
+      enableServiceLinks: false
+      nodeSelector:
+        kubernetes.io/hostname: vinpanathan-3090-1
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.16.0
+          command:
+            - bash
+            - -c
+            - |
+              set -e
+
+              # Remove stale CUDA compat libcuda that shadows the host driver.
+              rm -f /usr/local/cuda*/compat/libcuda.so* 2>/dev/null
+              ldconfig
+
+              echo "=== Starting vLLM (single-node AWQ) ==="
+              echo "CUDA devices: $(python3 -c 'import torch; print(torch.cuda.device_count())')"
+
+              exec vllm serve "$VLLM_MODEL" \
+                --port 8001 \
+                --max-model-len "$MAX_MODEL_LEN" \
+                --gpu-memory-utilization 0.90 \
+                --trust-remote-code \
+                --quantization awq
+          envFrom:
+            - configMapRef:
+                name: vllm-config
+          resources:
+            requests:
+              nvidia.com/gpu: "1"
+            limits:
+              nvidia.com/gpu: "1"
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: model-weights
+              mountPath: /model-weights
+              readOnly: true
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: model-weights
+          hostPath:
+            path: /data/huggingface/hub
+            type: Directory
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
+---
+# Headless service for internal DNS resolution.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-head
+  namespace: vllm
+  labels:
+    app.kubernetes.io/name: vllm
+    app.kubernetes.io/component: head
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: vllm
+    app.kubernetes.io/component: head
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+---
+# NodePort service for external access (port 30801).
+# Named vllm-api (not "vllm") to avoid K8s injecting VLLM_PORT env var.
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-api
+  namespace: vllm
+  labels:
+    app.kubernetes.io/name: vllm
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: vllm
+    app.kubernetes.io/component: head
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      nodePort: 30801

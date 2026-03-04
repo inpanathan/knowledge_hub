@@ -74,3 +74,9 @@ CLAUDE.local.md
 
 # Google Drive OAuth credentials (secrets)
 configs/gdrive_credentials.json
+
+# Data files (large binaries, tokens, backups)
+data/books/
+data/gdrive_token.json
+data/neo4j_data/
+data/neo4j_data_backup.tar.gz

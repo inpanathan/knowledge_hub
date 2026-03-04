@@ -124,7 +124,7 @@ uv run pytest tests/ --cov=src --cov-report=html
 | `EMBEDDING__MODEL_NAME` | `BAAI/bge-large-en-v1.5` | Embedding model name |
 | `EMBEDDING__DIMENSION` | `1024` | Embedding vector dimension |
 | `LLM__VLLM_BASE_URL` | `http://localhost:8001/v1` | vLLM OpenAI-compatible API URL |
-| `LLM__VLLM_MODEL` | `Qwen/Qwen2.5-14B-Instruct` | Model served by vLLM |
+| `LLM__VLLM_MODEL` | `Qwen/Qwen2.5-14B-Instruct-AWQ` | Model served by vLLM (AWQ 4-bit) |
 | `VECTOR_STORE__URL` | `http://localhost:6333` | Qdrant server URL |
 | `GOOGLE_DRIVE__CREDENTIALS_FILE` | `configs/gdrive_credentials.json` | Google OAuth credentials file |
 | `GOOGLE_DRIVE__TOKEN_FILE` | `data/gdrive_token.json` | Cached OAuth token |
@@ -163,7 +163,10 @@ uv run pytest tests/ --cov=src --cov-report=html
 | `scripts/authenticate_gdrive.py` | Interactive Google Drive OAuth authentication |
 | `scripts/download_books.py` | Download books from Google Drive |
 | `scripts/seed_books.sh` | Book seeding orchestrator |
-| `scripts/start_vllm.sh` | Start/stop vLLM inference server |
+| `scripts/start_vllm.sh` | Start/stop vLLM inference server (single-node) |
+| `scripts/start_vllm_k8s.sh` | Deploy/manage vLLM on K8s (single-node AWQ) |
+| `scripts/download_model_weights.sh` | Download model weights to local + remote nodes |
+| `k8s/` | K8s manifests (NVIDIA device plugin, vLLM pod) |
 | `scripts/start_qdrant.sh` | Start/stop Qdrant vector database |
 | `scripts/start_neo4j.sh` | Start/stop Neo4j graph database |
 | `scripts/build_knowledge_graph.py` | Build knowledge graph from embedded books |
@@ -272,6 +275,50 @@ bash scripts/start_qdrant.sh status
 ```
 
 > **Note:** vLLM defaults to port 8001 (override with `VLLM_PORT`). Port 8000 is reserved for the FastAPI app.
+
+### K8s vLLM (Single-Node AWQ)
+
+Serves Qwen2.5-14B-Instruct-AWQ (4-bit quantized, ~8GB) on a single RTX 3090 (24GB). Leaves ~14GB free for KV cache.
+
+```bash
+# First-time: deploy NVIDIA device plugin
+kubectl apply -f k8s/nvidia-device-plugin.yaml
+
+# Download AWQ model weights to 3090-1
+bash scripts/download_model_weights.sh
+
+# Pre-pull vLLM container image
+bash scripts/start_vllm_k8s.sh pull-images
+
+# Deploy vLLM
+bash scripts/start_vllm_k8s.sh deploy
+
+# Check status
+bash scripts/start_vllm_k8s.sh status
+
+# View logs
+bash scripts/start_vllm_k8s.sh logs
+
+# Port-forward for local access (localhost:8001)
+bash scripts/start_vllm_k8s.sh forward
+
+# Health check + inference test
+bash scripts/start_vllm_k8s.sh test
+
+# Stop vLLM pod (keeps device plugin + namespace)
+bash scripts/start_vllm_k8s.sh stop
+```
+
+| URL | Description |
+|-----|-------------|
+| `http://<node-ip>:30801` | vLLM API via NodePort |
+| `http://<node-ip>:30801/health` | vLLM health check |
+| `http://<node-ip>:30801/v1/chat/completions` | OpenAI-compatible chat API |
+| `http://localhost:8001` | vLLM API via port-forward |
+
+> **Architecture:** Single vLLM pod on RTX 3090 (vinpanathan-3090-1). AWQ 4-bit quantization reduces the 14B model from ~28GB to ~8GB, fitting comfortably on one GPU. Model weights pre-downloaded to `/data/huggingface/hub`.
+
+> **Fallback:** Use `scripts/start_vllm.sh` for single-node mode with smaller models (7B or quantized). Set `LLM__VLLM_BASE_URL=http://localhost:8001/v1` in `.env`.
 
 ### Neo4j Knowledge Graph
 

@@ -1,0 +1,49 @@
+# NVIDIA Device Plugin DaemonSet
+# Exposes nvidia.com/gpu resources to the K8s scheduler.
+# FAIL_ON_INIT_ERROR=false allows the plugin to start on nodes where
+# GPU init may differ (e.g., GTX 1660 Ti vs RTX 3090).
+#
+# Apply: kubectl apply -f k8s/nvidia-device-plugin.yaml
+# Verify: kubectl get nodes -o json | jq '.items[].status.capacity["nvidia.com/gpu"]'
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nvidia-device-plugin
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nvidia-device-plugin
+    spec:
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      priorityClassName: system-node-critical
+      runtimeClassName: nvidia
+      containers:
+        - name: nvidia-device-plugin
+          image: nvcr.io/nvidia/k8s-device-plugin:v0.17.0
+          env:
+            - name: FAIL_ON_INIT_ERROR
+              value: "false"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: device-plugin
+              mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins

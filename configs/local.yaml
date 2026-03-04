@@ -1,6 +1,12 @@
 # Local GPU stack configuration
 # Requires: vLLM server + Qdrant Docker container
-# Start with: bash scripts/start_qdrant.sh && bash scripts/start_vllm.sh
+#
+# Single-node: bash scripts/start_qdrant.sh && bash scripts/start_vllm.sh
+# Multi-node K8s: bash scripts/start_vllm_k8s.sh deploy
+#
+# For K8s pipeline-parallel mode, use port-forward or set vllm_base_url to NodePort:
+#   Port-forward: bash scripts/start_vllm_k8s.sh forward  (keeps localhost:8001)
+#   NodePort:     change vllm_base_url to http://<node-ip>:30801/v1
 
 model_backend: local
 app_debug: true
@@ -11,7 +17,7 @@ embedding:
 
 llm:
   vllm_base_url: "http://localhost:8001/v1"
-  vllm_model: "Qwen/Qwen2.5-14B-Instruct"
+  vllm_model: "Qwen/Qwen2.5-14B-Instruct-AWQ"
   temperature: 0.3
   max_tokens: 1024
   timeout_seconds: 120
