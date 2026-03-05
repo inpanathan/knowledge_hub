@@ -68,7 +68,9 @@ class GraphExtractor(Protocol):
         self, chunk_text: str, chapter_title: str, book_title: str
     ) -> ExtractionResult: ...
 
-    def extract_from_book(self, chunks: list[dict], book_title: str) -> list[ExtractionResult]: ...
+    def extract_from_book(
+        self, chunks: list[dict], book_title: str, *, max_workers: int = 8
+    ) -> list[ExtractionResult]: ...
 
 
 class LLMGraphExtractor:
@@ -118,29 +120,45 @@ class LLMGraphExtractor:
             except Exception:
                 return ExtractionResult()
 
-    def extract_from_book(self, chunks: list[dict], book_title: str) -> list[ExtractionResult]:
-        """Extract entities from all chunks of a book.
+    def extract_from_book(
+        self, chunks: list[dict], book_title: str, *, max_workers: int = 8
+    ) -> list[ExtractionResult]:
+        """Extract entities from all chunks of a book using concurrent workers.
 
         Args:
             chunks: List of dicts with keys: text, chapter_title
             book_title: Title of the book
+            max_workers: Number of concurrent LLM requests (vLLM batches these on GPU)
         """
-        results: list[ExtractionResult] = []
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         total = len(chunks)
-        for i, chunk in enumerate(chunks):
-            logger.info(
-                "entity_extraction_progress",
-                chunk_index=i + 1,
-                total_chunks=total,
-                book_title=book_title,
-            )
+        results: list[ExtractionResult | None] = [None] * total
+
+        def _process(idx: int, chunk: dict) -> tuple[int, ExtractionResult]:
             result = self.extract_from_chunk(
                 chunk_text=chunk.get("text", ""),
                 chapter_title=chunk.get("chapter_title", ""),
                 book_title=book_title,
             )
-            results.append(result)
-        return results
+            return idx, result
+
+        completed = 0
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(_process, i, chunk): i for i, chunk in enumerate(chunks)}
+            for future in as_completed(futures):
+                idx, result = future.result()
+                results[idx] = result
+                completed += 1
+                if completed % max_workers == 0 or completed == total:
+                    logger.info(
+                        "entity_extraction_progress",
+                        completed=completed,
+                        total_chunks=total,
+                        book_title=book_title,
+                    )
+
+        return [r for r in results if r is not None]
 
 
 class MockGraphExtractor:
@@ -189,7 +207,9 @@ class MockGraphExtractor:
         ]
         return ExtractionResult(entities=entities, relationships=relationships, topics=topics)
 
-    def extract_from_book(self, chunks: list[dict], book_title: str) -> list[ExtractionResult]:
+    def extract_from_book(
+        self, chunks: list[dict], book_title: str, *, max_workers: int = 8
+    ) -> list[ExtractionResult]:
         return [
             self.extract_from_chunk(
                 chunk_text=c.get("text", ""),

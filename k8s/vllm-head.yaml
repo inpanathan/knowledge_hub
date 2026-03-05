@@ -53,7 +53,9 @@ spec:
                 --max-model-len "$MAX_MODEL_LEN" \
                 --gpu-memory-utilization 0.90 \
                 --trust-remote-code \
-                --quantization awq
+                --quantization awq \
+                --max-num-seqs 16 \
+                --enable-chunked-prefill
           envFrom:
             - configMapRef:
                 name: vllm-config
