@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
+from src.utils.config import settings
 from src.utils.errors import AppError, ErrorCode
 from src.utils.logger import get_logger
 
@@ -16,6 +17,18 @@ if TYPE_CHECKING:
     from src.utils.vector_store import VectorStore
 
 logger = get_logger(__name__)
+
+# Reserve tokens for system prompt, user instructions, and output
+_OUTPUT_TOKENS = 1024
+_PROMPT_OVERHEAD_TOKENS = 300
+
+
+def _truncate_to_token_budget(text: str, max_tokens: int) -> str:
+    """Truncate text to fit within a token budget (rough: 1 token ~ 4 chars)."""
+    max_chars = max_tokens * 4
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "\n\n[Content truncated to fit context window]"
 
 
 class SummaryMode(StrEnum):
@@ -83,6 +96,8 @@ class SummarizationService:
             all_content.append(f"[Source: {source.title}]\n{source_text}")
 
         combined = "\n\n---\n\n".join(all_content)
+        content_budget = settings.rag.max_context_tokens - _PROMPT_OVERHEAD_TOKENS
+        combined = _truncate_to_token_budget(combined, content_budget)
 
         # Build prompt based on mode
         if mode == SummaryMode.SHORT:
@@ -106,7 +121,7 @@ class SummarizationService:
             "Never fabricate information not present in the source material."
         )
 
-        summary = self._llm.generate(prompt, system=system, max_tokens=2048)
+        summary = self._llm.generate(prompt, system=system, max_tokens=_OUTPUT_TOKENS)
 
         logger.info(
             "summary_generated",
@@ -150,6 +165,8 @@ class SummarizationService:
                 titles.append("Unknown")
 
         combined = "\n\n---\n\n".join(r.text for r in results)
+        content_budget = settings.rag.max_context_tokens - _PROMPT_OVERHEAD_TOKENS
+        combined = _truncate_to_token_budget(combined, content_budget)
 
         if mode == SummaryMode.SHORT:
             prompt = (
@@ -169,7 +186,7 @@ class SummarizationService:
             "capture the essential information. Never fabricate information."
         )
 
-        summary = self._llm.generate(prompt, system=system, max_tokens=2048)
+        summary = self._llm.generate(prompt, system=system, max_tokens=_OUTPUT_TOKENS)
 
         return SummaryResult(
             summary=summary,

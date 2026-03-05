@@ -10,6 +10,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from src.utils.cache import CacheStore
+from src.utils.config import settings
 from src.utils.errors import AppError, ErrorCode
 from src.utils.logger import get_logger
 
@@ -182,6 +183,10 @@ class InterviewService:
             )
 
         context = "\n\n".join(r.text for r in results[:10])
+        # Truncate to fit context window (~4 chars per token)
+        max_context_chars = settings.rag.max_context_tokens * 4
+        if len(context) > max_context_chars:
+            context = context[:max_context_chars]
 
         # Generate questions
         prompt = (
@@ -201,7 +206,7 @@ class InterviewService:
             "questions that test deep understanding. Return ONLY valid JSON."
         )
 
-        response = self._llm.generate(prompt, system=system, max_tokens=2048)
+        response = self._llm.generate(prompt, system=system, max_tokens=1024)
         questions = self._parse_questions(response, question_count)
 
         session = InterviewSession(

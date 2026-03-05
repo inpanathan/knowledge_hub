@@ -10,6 +10,7 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from src.utils.cache import CacheStore
+from src.utils.config import settings
 from src.utils.errors import AppError, ErrorCode
 from src.utils.logger import get_logger
 
@@ -181,7 +182,11 @@ class QnAService:
                 message="No relevant content found to generate Q&A",
             )
 
-        combined = "\n\n".join(content_parts[:15])  # Limit context size
+        combined = "\n\n".join(content_parts[:10])  # Limit context size
+        # Truncate to fit context window (~4 chars per token)
+        max_context_chars = settings.rag.max_context_tokens * 4
+        if len(combined) > max_context_chars:
+            combined = combined[:max_context_chars]
         types_str = ", ".join(question_types or ["factual", "conceptual", "application"])
 
         prompt = (
@@ -202,7 +207,7 @@ class QnAService:
             "based strictly on the provided content. Return ONLY valid JSON."
         )
 
-        response = self._llm.generate(prompt, system=system, max_tokens=4096)
+        response = self._llm.generate(prompt, system=system, max_tokens=1024)
 
         # Parse Q&A pairs
         pairs = self._parse_qa_response(response, source_titles, difficulty.value)
