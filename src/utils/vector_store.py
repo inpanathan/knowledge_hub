@@ -323,6 +323,60 @@ class VectorStore:
             )
         return search_results
 
+    def scroll_book_chunks(
+        self,
+        collection_name: str,
+        book_id: str,
+        *,
+        chapter_number: int | None = None,
+    ) -> list[SearchResult]:
+        """Retrieve ALL chunks for a book (or chapter) sorted by chunk_index.
+
+        Uses Qdrant scroll() to paginate through all matching points without
+        requiring a query embedding.
+        """
+        conditions: list = [FieldCondition(key="book_id", match=MatchValue(value=book_id))]
+        if chapter_number is not None:
+            conditions.append(
+                FieldCondition(key="chapter_number", match=MatchValue(value=chapter_number))
+            )
+        scroll_filter = Filter(must=conditions)
+
+        all_results: list[SearchResult] = []
+        offset = None
+
+        while True:
+            points, next_offset = self._client.scroll(
+                collection_name=collection_name,
+                scroll_filter=scroll_filter,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+
+            for point in points:
+                payload = dict(point.payload or {})
+                chunk_id = payload.pop("_chunk_id", str(point.id))
+                text = payload.pop("text", "")
+                all_results.append(
+                    SearchResult(chunk_id=chunk_id, text=text, score=0.0, metadata=payload)
+                )
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        # Sort by chunk_index for correct ordering
+        all_results.sort(key=lambda r: r.metadata.get("chunk_index", 0))
+        logger.info(
+            "book_chunks_scrolled",
+            book_id=book_id,
+            chapter_number=chapter_number,
+            chunk_count=len(all_results),
+        )
+        return all_results
+
     def count_collection(self, collection_name: str) -> int:
         """Return total number of documents in a specific collection."""
         try:

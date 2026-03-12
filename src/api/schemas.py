@@ -180,6 +180,33 @@ class SummarizeResponse(BaseModel):
     source_titles: list[str]
 
 
+class BookSummarizeRequest(BaseModel):
+    """Request to summarize a book chapter-by-chapter."""
+
+    mode: str = "detailed"
+
+
+class ChapterSummaryItem(BaseModel):
+    """A single chapter summary in the book summarization response."""
+
+    chapter_number: int
+    chapter_title: str
+    summary: str
+    chunk_count: int
+
+
+class BookSummarizeResponse(BaseModel):
+    """Full book summarization response with per-chapter detail."""
+
+    book_id: str
+    book_title: str
+    author: str
+    overall_summary: str
+    chapters: list[ChapterSummaryItem]
+    total_chunks_processed: int
+    total_llm_calls: int
+
+
 # ---------- Q&A ----------
 
 

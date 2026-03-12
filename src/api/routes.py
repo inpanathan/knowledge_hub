@@ -30,8 +30,11 @@ from src.api.schemas import (
     BookEmbedResponse,
     BookListApiResponse,
     BookProcessingStatusResponse,
+    BookSummarizeRequest,
+    BookSummarizeResponse,
     BookSummaryResponse,
     BookUpdateRequest,
+    ChapterSummaryItem,
     ChatMessageResponse,
     ChatRequest,
     ChatResponse,
@@ -893,6 +896,34 @@ async def get_book_status(
         graph_status=book.graph_status,
         chunk_count=chunk_count,
         source_id=book.source_id,
+    )
+
+
+@router.post("/books/{book_id}/summarize", response_model=BookSummarizeResponse)
+async def summarize_book(
+    book_id: str,
+    body: BookSummarizeRequest,
+    summarization: Annotated[SummarizationService, Depends(get_summarization)],
+) -> BookSummarizeResponse:
+    """Summarize a book chapter-by-chapter using map-reduce."""
+    mode = SummaryMode(body.mode) if body.mode in ("short", "detailed") else SummaryMode.DETAILED
+    result = summarization.summarize_book(book_id, mode=mode)
+    return BookSummarizeResponse(
+        book_id=result.book_id,
+        book_title=result.book_title,
+        author=result.author,
+        overall_summary=result.overall_summary,
+        chapters=[
+            ChapterSummaryItem(
+                chapter_number=ch.chapter_number,
+                chapter_title=ch.chapter_title,
+                summary=ch.summary,
+                chunk_count=ch.chunk_count,
+            )
+            for ch in result.chapters
+        ],
+        total_chunks_processed=result.total_chunks_processed,
+        total_llm_calls=result.total_llm_calls,
     )
 
 

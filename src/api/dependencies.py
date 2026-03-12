@@ -165,6 +165,8 @@ def init_services() -> ServiceContainer:
         vector_store=vector_store,
         embedding_model=embedding_model,
         catalog=catalog,
+        book_service=books,
+        cache=cache,
     )
 
     _container = ServiceContainer(

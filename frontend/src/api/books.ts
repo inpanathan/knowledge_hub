@@ -5,6 +5,7 @@ import type {
   BookEmbedResponse,
   BookListResponse,
   BookProcessingStatus,
+  BookSummarizeResponse,
   BookUpdateRequest,
 } from "./types";
 
@@ -60,4 +61,14 @@ export function embedBook(bookId: string, force?: boolean): Promise<BookEmbedRes
 
 export function getBookStatus(bookId: string): Promise<BookProcessingStatus> {
   return request<BookProcessingStatus>(`/books/${bookId}/status`);
+}
+
+export function summarizeBook(
+  bookId: string,
+  mode: "short" | "detailed" = "detailed",
+): Promise<BookSummarizeResponse> {
+  return request<BookSummarizeResponse>(`/books/${bookId}/summarize`, {
+    method: "POST",
+    body: JSON.stringify({ mode }),
+  });
 }

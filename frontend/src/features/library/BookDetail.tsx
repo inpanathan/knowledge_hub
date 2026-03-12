@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Trash2, Save, Sparkles, Loader2, Network } from "lucide-react";
+import { Download, Trash2, Save, Sparkles, Loader2, Network, BookOpen, ChevronDown, ChevronRight } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,8 +16,10 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getBook, updateBook, deleteBook, embedBook, getBookDownloadUrl, getBookCoverUrl } from "@/api/books";
+import { getBook, updateBook, deleteBook, embedBook, getBookDownloadUrl, getBookCoverUrl, summarizeBook } from "@/api/books";
 import { getBookEntities, getRelatedBooks } from "@/api/graph";
+import { MarkdownRenderer } from "@/components/shared/MarkdownRenderer";
+import type { BookSummarizeResponse } from "@/api/types";
 
 interface BookDetailProps {
   bookId: string | null;
@@ -58,6 +60,8 @@ export function BookDetail({ bookId, open, onOpenChange }: BookDetailProps) {
   const [description, setDescription] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [summaryResult, setSummaryResult] = useState<BookSummarizeResponse | null>(null);
+  const [expandedChapters, setExpandedChapters] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (book) {
@@ -92,12 +96,26 @@ export function BookDetail({ bookId, open, onOpenChange }: BookDetailProps) {
     },
   });
 
+  const summarizeMutation = useMutation({
+    mutationFn: () => summarizeBook(bookId!, "detailed"),
+    onSuccess: (data) => setSummaryResult(data),
+  });
+
   const addTag = () => {
     const tag = tagInput.trim();
     if (tag && !tags.includes(tag)) {
       setTags((prev) => [...prev, tag]);
       setTagInput("");
     }
+  };
+
+  const toggleChapter = (chapterNum: number) => {
+    setExpandedChapters((prev) => {
+      const next = new Set(prev);
+      if (next.has(chapterNum)) next.delete(chapterNum);
+      else next.add(chapterNum);
+      return next;
+    });
   };
 
   return (
@@ -324,6 +342,89 @@ export function BookDetail({ bookId, open, onOpenChange }: BookDetailProps) {
                     </ul>
                   </ScrollArea>
                 </div>
+              </>
+            )}
+
+            <Separator />
+
+            {/* Book Summarization */}
+            {book.embedding_status === "completed" && (
+              <>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => summarizeMutation.mutate()}
+                    disabled={summarizeMutation.isPending}
+                  >
+                    {summarizeMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <BookOpen className="mr-2 h-4 w-4" />
+                    )}
+                    {summarizeMutation.isPending
+                      ? "Summarizing... (this may take a minute)"
+                      : "Summarize Book"}
+                  </Button>
+                </div>
+
+                {summarizeMutation.isError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      {summarizeMutation.error?.message ?? "Failed to summarize book"}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {summaryResult && (
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium">Overall Summary</h4>
+                      <div className="rounded-md border p-3 text-sm">
+                        <MarkdownRenderer content={summaryResult.overall_summary} />
+                      </div>
+                    </div>
+
+                    {summaryResult.chapters.length > 0 && (
+                      <div>
+                        <h4 className="mb-2 text-sm font-medium">
+                          Chapter Summaries ({summaryResult.chapters.length})
+                        </h4>
+                        <div className="space-y-1">
+                          {summaryResult.chapters.map((ch) => (
+                            <div key={ch.chapter_number} className="rounded-md border">
+                              <button
+                                type="button"
+                                className="flex w-full items-center gap-2 p-2 text-left text-sm hover:bg-muted/50"
+                                onClick={() => toggleChapter(ch.chapter_number)}
+                              >
+                                {expandedChapters.has(ch.chapter_number) ? (
+                                  <ChevronDown className="h-3 w-3 shrink-0" />
+                                ) : (
+                                  <ChevronRight className="h-3 w-3 shrink-0" />
+                                )}
+                                <span className="font-medium truncate">{ch.chapter_title}</span>
+                                <Badge variant="secondary" className="ml-auto shrink-0 text-[10px]">
+                                  {ch.chunk_count} chunks
+                                </Badge>
+                              </button>
+                              {expandedChapters.has(ch.chapter_number) && (
+                                <div className="border-t p-3 text-sm">
+                                  <MarkdownRenderer content={ch.summary} />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Processed {summaryResult.total_chunks_processed} chunks in{" "}
+                      {summaryResult.total_llm_calls} LLM calls
+                    </p>
+                  </div>
+                )}
               </>
             )}
 

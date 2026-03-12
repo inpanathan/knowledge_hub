@@ -80,6 +80,7 @@ Seeded by `bash scripts/db_seed.sh`. Password for all accounts: `<!-- TODO: fill
 | `GET` | `/books/{id}/cover` | Serve the book cover image |
 | `POST` | `/books/{id}/embed` | Trigger embedding for a single book |
 | `GET` | `/books/{id}/status` | Get book processing status (embedding, graph) |
+| `POST` | `/books/{id}/summarize` | Summarize book chapter-by-chapter (map-reduce) |
 | `GET` | `/graph/search?q=&type=&limit=20` | Search entities in the knowledge graph |
 | `GET` | `/graph/entity/{id}?depth=1` | Get entity and its N-hop neighborhood |
 | `GET` | `/graph/entity/{id}/path/{target_id}?max_depth=5` | Find shortest path between entities |

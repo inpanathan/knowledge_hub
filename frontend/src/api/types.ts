@@ -281,6 +281,29 @@ export interface BookUpdateRequest {
   description?: string;
 }
 
+// ---------- Book Summarization ----------
+
+export interface BookSummarizeRequest {
+  mode?: "short" | "detailed";
+}
+
+export interface ChapterSummaryItem {
+  chapter_number: number;
+  chapter_title: string;
+  summary: string;
+  chunk_count: number;
+}
+
+export interface BookSummarizeResponse {
+  book_id: string;
+  book_title: string;
+  author: string;
+  overall_summary: string;
+  chapters: ChapterSummaryItem[];
+  total_chunks_processed: number;
+  total_llm_calls: number;
+}
+
 // ---------- Knowledge Graph ----------
 
 export interface GraphNode {
